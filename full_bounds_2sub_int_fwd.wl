@@ -133,8 +133,9 @@ c=D[lim/. Sin[b]->q,q]//Simplify;
 
 (* ::Input::Initialization:: *)
 safeJoin[A_,B_,lvl_]:=Which[A==={}||A===Null,B,B==={}||B===Null,A,True,Join[A,B,lvl]];
+safeFlatten[A_,lvl_]:=Module[{need=Max@Flatten@lvl},Flatten[If[ArrayDepth[A]<need,A/. {}->{{}},A],lvl]];
+safeMult[A_,B_]:=Module[{da},Which[A==={}||A===Null||B==={}||B===Null,{},ListQ[A]&&(da=Dimensions[A];da=!={}&&Last[da]===0),{},True,A . B]]
 
-safeMult[A_,B_]:=Which[A==={}||A===Null||B==={}||B===Null,{},True,A . B];
 
 getBounds[dim_Integer,xs_,\[Delta]b_,Bmax_,Mp_,W_,highEintsSymm_,highEintsAnti_,CimpLowEintegrals_,finImpParImprDispInts_,fwdEqnsLowE_,fwdEqnsHighESymm_,fwdEqnsHighEAnti_,finImpParFwdEqnsHighE_,nnMax_Integer,Jmax_Integer,nFwdMax_Integer,eftVals_,symmReps_,antisymmReps_,excl_,mmax_,polsFileName_,saveFile_,boundsFileName_,inclLargeImpPar_:True]:=Module[{largeImpParSymm,largeImpParAnti,getPols,lowE,
 lowEintsSymmRepMatrices,
@@ -164,11 +165,11 @@ nnTake=Max[0,nnMax-1];
 	
 lowE=Join[Take[CimpLowEintegrals,UpTo[nnTake],All]//Flatten,Take[fwdEqnsLowE,UpTo[nFwdMax]]]; (*nn*n_col_b+nFwd*)
 
-highESymm=safeJoin[Flatten[Take[highEintsSymm,All,UpTo[nnTake],All,All],{{3},{1},{2,4}}],Take[fwdEqnsHighESymm,All,All,UpTo[nFwdMax]],3];(*R,J,nn*n_col_b+nFwd*)
+highESymm=safeJoin[safeFlatten[Take[highEintsSymm,All,UpTo[nnTake],All,All],{{3},{1},{2,4}}],Take[fwdEqnsHighESymm,All,All,UpTo[nFwdMax]],3];(*R,J,nn*n_col_b+nFwd*)
 
-highEAnti=safeJoin[Flatten[Take[highEintsAnti,All,UpTo[nnTake],All,All],{{3},{1},{2,4}}],Take[fwdEqnsHighEAnti,All,All,UpTo[nFwdMax]],3];
+highEAnti=safeJoin[safeFlatten[Take[highEintsAnti,All,UpTo[nnTake],All,All],{{3},{1},{2,4}}],Take[fwdEqnsHighEAnti,All,All,UpTo[nFwdMax]],3];
 
-finiteImpParHighE=safeJoin[Flatten[Take[finImpParImprDispInts,UpTo[nnTake],All,All],{{2},{1,3}}],Take[finImpParFwdEqnsHighE,All,UpTo[nFwdMax]],2];(*R,nn*n_col_b+nFwd*)
+finiteImpParHighE=safeJoin[safeFlatten[Take[finImpParImprDispInts,UpTo[nnTake],All,All],{{2},{1,3}}],Take[finImpParFwdEqnsHighE,All,UpTo[nFwdMax]],2];(*R,nn*n_col_b+nFwd*)
 
 
 largeImpPar=GetLargeImpParInts[finiteImpParHighE,dim,mmax]; (*{2,2,R,nn*n_col_b+nFwd}*)
@@ -183,7 +184,7 @@ highEAnti=safeMult[highEAnti,Transpose[nullSp]];
 finiteImpParHighE=safeMult[finiteImpParHighE,Transpose[nullSp]]; (*R,n_indep*)
 largeImpPar=safeMult[largeImpPar,Transpose[nullSp]]; (*{2,2,R,n_indep}*)
 ];
-Print["elim"];
+Print["eliminating couplings"];
 
 getPols[fileName_]:=Module[{Pols1,Pols2,Pols3,Pols,symmRepsUse,antiRepsUse,symmRepsAll,antiRepsAll,symmPos,antiPos},
 symmRepsUse=Complement[symmReps,excl];
@@ -230,11 +231,11 @@ If[FileExistsQ[polsFileName]&&saveFile,polsFull=Import[polsFileName];
 Print["importing pols file"];,polsFull=getPols[polsFileName];
 Print["pols file not found, creating"];];
 bounds[eftValRule_,Pols_]:=Module[{nvec,bvec},
-Print[eftValRule];
+Print["running with eft values: ",eftValRule];
 nvec=-D[lowE/. eftValRule,g]//Simplify;
 bvec=-lowE/. eftValRule/. g->0//Simplify;
-Print[nvec];
-Print[bvec];
+Print["vector n= ",nvec];
+Print["vector b= ",bvec];
 DeleteFile["test.xml"];
 DeleteFile["test"];
 DeleteDirectory[{"test.ck","test_out"},DeleteContents->True];
@@ -410,3 +411,11 @@ If[Length[coeffs]>0,coeffs . pols/.s[1,2]->s/.s[1,4]->t/.P[a[1],a[4],a[2],a[3]]-
 
 getB[Mp_,kMax_,symmReps_]:=Module[{pols},Sum[pols=stuSymmPolsCol[k,Mp,symmReps];
 If[Length[pols]>0, Table[g[k,i],{i,Length[pols]}] . pols,0],{k,0,kMax}]]
+
+
+getCimpLowE[Mp_,W_,CimpLowE_]:=Module[{symmReps,basis,wbasis,ss,tt},symmReps=Flatten@Position[Diagonal[W],_?Positive];
+basis=D[getB[Mp,3,symmReps],{Array[Pt,Length[Mp]],1}];
+wbasis=W . basis;
+ss=Unique["s"];
+tt=Unique["t"];
+CimpLowE/. {B[x_,y_]:>(basis/. {s->x,t->y}),WB[x_,y_]:>(wbasis/. {s->x,t->y}),Derivative[m_,n_][B][x_,y_]:>(D[basis/. {s->ss,t->tt},{ss,m},{tt,n}]/. {ss->x,tt->y}),Derivative[m_,n_][WB][x_,y_]:>(D[wbasis/. {s->ss,t->tt},{ss,m},{tt,n}]/. {ss->x,tt->y}),Pt[1]->D[Pt[1],{Array[Pt,Length[Mp]],1}]}]
