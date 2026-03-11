@@ -65,6 +65,7 @@ The script imports `SDPB.m` and calls SDPB through Docker + `mpirun`.
 ```wl
 calculateBounds[
   eftVals_,
+  eftReplRules_,
   dispRelHighE_, dispLowE_,
   CimpEvenR_, CimpOddR_, CimpLowE_,
   fileFcVals_, integralsFileName_, fwdFileName_,
