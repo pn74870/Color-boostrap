@@ -81,8 +81,10 @@ calculateBounds[
 
 ### Argument guide (practical)
 
-1. `eftVals`  
+0. `eftVals`  
    List of replacement-rule sets. Each set defines fixed EFT inputs and leaves `g` as objective.
+1. `eftReplRules`  
+   List of replacement-rule sets for redefining the couplings. (default {})
 2. `dispRelHighE`, `dispLowE`  
    Non-improved high/low-energy dispersion relations.
 3. `CimpEvenR`, `CimpOddR`  
