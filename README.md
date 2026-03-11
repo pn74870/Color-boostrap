@@ -122,6 +122,59 @@ calculateBounds[
 20. `inclLargeImpPar` (optional, default `True`)  
    Toggle large impact-parameter constraints.
 
+
+### `getCimpLowE` / `CimpLowE` (t-channel projector-basis check)
+
+The notebook’s improved low-energy object is the `CimpLowE` expression (this is the object used by the helper often referred to as `getCimpLowE` in analysis discussions):
+
+```wl
+CimpLowE =
+  (8 G Pi Pt[1])/t
+  + (1/2) (B^(0,2)[0,0] - WB^(0,2)[0,0])
+  - B^(1,1)[0,0]
+  - (1/2) t B^(1,2)[0,0];
+```
+
+Interpretation in the fixed `t`-channel projector basis:
+- `B` is the vector of low-energy coefficients in representation space,
+- `WB` is `W.B`, i.e. the crossed/sign-flipped rep vector,
+- `Pt[1]` selects the `t`-channel singlet projector, so `(8 G Pi Pt[1])/t` is the explicit graviton-pole piece,
+- the derivative terms are the finite EFT subtraction data retained after improved elimination of higher-`s` tails.
+
+In other words, `CimpLowE` is the explicit low-energy side of the improved dispersion relation after projecting to the fixed `P^{adbc}` basis and truncating the subtraction sector to the derivatives needed by the improved construction.
+
+To inspect the **explicit** form in the fixed `t`-projector basis, use:
+
+```wl
+getCimpLowE[Mp_,W_,CimpLowE_]:=Module[{symmReps,basis,wbasis,ss,tt},
+  symmReps=Flatten@Position[Diagonal[W],_?Positive];
+  basis=D[getB[Mp,3,symmReps],{Array[Pt,Length[Mp]],1}];
+  wbasis=W . basis;
+  ss=Unique["s"];
+  tt=Unique["t"];
+  CimpLowE/. {
+    B[x_,y_]:>(basis/. {s->x,t->y}),
+    WB[x_,y_]:>(wbasis/. {s->x,t->y}),
+    Derivative[m_,n_][B][x_,y_]:>(D[basis/. {s->ss,t->tt},{ss,m},{tt,n}]/. {ss->x,tt->y}),
+    Derivative[m_,n_][WB][x_,y_]:>(D[wbasis/. {s->ss,t->tt},{ss,m},{tt,n}]/. {ss->x,tt->y}),
+    Pt[1]->D[Pt[1],{Array[Pt,Length[Mp]],1}]
+  }
+]
+```
+
+What this helper does:
+- builds the low-energy basis vector (`basis`) from `getB[Mp,3,symmReps]`,
+- builds crossed basis coefficients (`wbasis = W . basis`),
+- replaces symbolic `B`, `WB`, and all needed derivatives by explicit basis-vector expressions,
+- replaces `Pt[1]` by its coefficient-vector form,
+- returns the concrete rep-space vector expression for `CimpLowE` in the `t`-projector basis.
+
+Pipeline usage details:
+- `calculateBounds[...]` passes `CimpLowE` into `GetLowEintegrals[CimpLowE, Mp, W, 3, nMax]` (only `k=3` is needed in this improved relation).
+- `GetLowEintegrals` performs the same type of substitutions internally to assemble low-energy integral constraints before SDPB.
+
+This is exactly the implementation-level bridge between the symbolic improved equation and the linear constraints fed to SDPB.
+
 ### Example call pattern
 
 From notebook comments/cells, a typical invocation is:
