@@ -20,7 +20,8 @@ PhypRule=P->Function[{j,x},Hypergeometric2F1[-j,j+d-3,(d-2)/2,(1-x)/2]];
 (* ::Input::Initialization:: *)
 getDispRelVec[dispR_]:=D[dispR,{{\[Delta],Mp,Mp . W},1}]
 (*Args: 
-1. list of eft rules, with g being the objective
+0. list of eft coupling rules, with g being the objective
+1. list of eft coupling replacement rules, for redefining the couplings
 2. not improved high E dispersion relation dispRelHighE[Mp,W]
 3. not improved low E dispersion relation dispLowE[W,R]
 4. improved high E symmetric rep dispersion relation, in terms of {t,\[Mu],Mp,Mp.W,P[J,1],P[J,1+(2 t)/\[Mu]],\[Delta],(P^(0,1))[J,1]}
@@ -47,7 +48,7 @@ getDispRelVec[dispR_]:=D[dispR,{{\[Delta],Mp,Mp . W},1}]
 25. list of excluded reps
 26. bool flag for including large impact param limit
 *)
-calculateBounds[eftVals_,dispRelHighE_,dispLowE_,CimpEvenR_,CimpOddR_,CimpLowE_,fileFcVals_,integralsFileName_,fwdFileName_,nMax_Integer,Jmax_Integer,nFwdMax_Integer,Mp_,W_,kMax_Integer,d_Integer,xs_,\[Delta]b_,Bmax_,mmax_,polsFileName_,savePolsFile_,boundsFileName_,hasGrav_:True,excludeReps_:{},inclLargeImpPar_:True]:= Module[{highEintsSymm,highEintsAnti,finImpParSymm,finImpParAnti,fwdEqnsLowE,fwdEqnsHighE,CimpLowEintegrals,fwdEqnsHighESymm,fwdEqnsHighEAnti,symmReps,antiReps,colorBasis,finImpParImprDispInts,finImpParFwdEqnsHighE},
+calculateBounds[eftVals_,eftRepRule_:{},dispRelHighE_,dispLowE_,CimpEvenR_,CimpOddR_,CimpLowE_,fileFcVals_,integralsFileName_,fwdFileName_,nMax_Integer,Jmax_Integer,nFwdMax_Integer,Mp_,W_,kMax_Integer,d_Integer,xs_,\[Delta]b_,Bmax_,mmax_,polsFileName_,savePolsFile_,boundsFileName_,hasGrav_:True,excludeReps_:{},inclLargeImpPar_:True]:= Module[{highEintsSymm,highEintsAnti,finImpParSymm,finImpParAnti,fwdEqnsLowE,fwdEqnsHighE,CimpLowEintegrals,fwdEqnsHighESymm,fwdEqnsHighEAnti,symmReps,antiReps,colorBasis,finImpParImprDispInts,finImpParFwdEqnsHighE},
 
 symmReps=Flatten@Position[Diagonal[W],_?Positive];
 antiReps=Flatten@Position[Diagonal[W],_?Negative];
@@ -87,7 +88,7 @@ finImpParImprDispInts=Join[finImpParSymm,finImpParAnti,2]; (*nint,rep,n_col_b*)
 
 finImpParFwdEqnsHighE=Table[GetFintImpParLim[fwdEqnsHighE[[i,j]]],{i,Dimensions[fwdEqnsHighE][[1]]},{j,Dimensions[fwdEqnsHighE][[2]]}] (*R,n fwd*);
 Print["get bounds"];
-getBounds[d,xs,\[Delta]b,Bmax,Mp,W,highEintsSymm,highEintsAnti,CimpLowEintegrals,finImpParImprDispInts,fwdEqnsLowE,fwdEqnsHighESymm,fwdEqnsHighEAnti,finImpParFwdEqnsHighE,If[hasGrav,nMax,0],Jmax,nFwdMax,eftVals,symmReps,antiReps,excludeReps,mmax,polsFileName,savePolsFile,boundsFileName,inclLargeImpPar]
+getBounds[d,xs,\[Delta]b,Bmax,Mp,W,highEintsSymm,highEintsAnti,CimpLowEintegrals,finImpParImprDispInts,fwdEqnsLowE,fwdEqnsHighESymm,fwdEqnsHighEAnti,finImpParFwdEqnsHighE,If[hasGrav,nMax,0],Jmax,nFwdMax,eftVals,eftRepRule,symmReps,antiReps,excludeReps,mmax,polsFileName,savePolsFile,boundsFileName,inclLargeImpPar]
 ]
 
 
@@ -137,7 +138,7 @@ safeFlatten[A_,lvl_]:=Module[{need=Max@Flatten@lvl},Flatten[If[ArrayDepth[A]<nee
 safeMult[A_,B_]:=Module[{da},Which[A==={}||A===Null||B==={}||B===Null,{},ListQ[A]&&(da=Dimensions[A];da=!={}&&Last[da]===0),{},True,A . B]]
 
 
-getBounds[dim_Integer,xs_,\[Delta]b_,Bmax_,Mp_,W_,highEintsSymm_,highEintsAnti_,CimpLowEintegrals_,finImpParImprDispInts_,fwdEqnsLowE_,fwdEqnsHighESymm_,fwdEqnsHighEAnti_,finImpParFwdEqnsHighE_,nnMax_Integer,Jmax_Integer,nFwdMax_Integer,eftVals_,symmReps_,antisymmReps_,excl_,mmax_,polsFileName_,saveFile_,boundsFileName_,inclLargeImpPar_:True]:=Module[{largeImpParSymm,largeImpParAnti,getPols,lowE,
+getBounds[dim_Integer,xs_,\[Delta]b_,Bmax_,Mp_,W_,highEintsSymm_,highEintsAnti_,CimpLowEintegrals_,finImpParImprDispInts_,fwdEqnsLowE_,fwdEqnsHighESymm_,fwdEqnsHighEAnti_,finImpParFwdEqnsHighE_,nnMax_Integer,Jmax_Integer,nFwdMax_Integer,eftVals_,eftRepRule_,symmReps_,antisymmReps_,excl_,mmax_,polsFileName_,saveFile_,boundsFileName_,inclLargeImpPar_:True]:=Module[{largeImpParSymm,largeImpParAnti,getPols,lowE,
 lowEintsSymmRepMatrices,
 lowEintsAntiSymmRepMatrices,
 highEintsSymmRepMatrices,
@@ -163,7 +164,7 @@ finImpParFwdEqnsHighE[[R,nFwd]]
 
 nnTake=Max[0,nnMax-1];
 	
-lowE=Join[Take[CimpLowEintegrals,UpTo[nnTake],All]//Flatten,Take[fwdEqnsLowE,UpTo[nFwdMax]]]; (*nn*n_col_b+nFwd*)
+lowE=Join[Take[CimpLowEintegrals,UpTo[nnTake],All]//Flatten,Take[fwdEqnsLowE,UpTo[nFwdMax]]]/.eftRepRule; (*nn*n_col_b+nFwd*)
 
 highESymm=safeJoin[safeFlatten[Take[highEintsSymm,All,UpTo[nnTake],All,All],{{3},{1},{2,4}}],Take[fwdEqnsHighESymm,All,All,UpTo[nFwdMax]],3];(*R,J,nn*n_col_b+nFwd*)
 
