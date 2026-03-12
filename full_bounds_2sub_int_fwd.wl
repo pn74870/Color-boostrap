@@ -48,6 +48,20 @@ getDispRelVec[dispR_]:=D[dispR,{{\[Delta],Mp,Mp . W},1}]
 25. list of excluded reps
 26. bool flag for including large impact param limit
 *)
+
+
+(*output: list of 
+1. eft coupling inequality for lower bound lowE . y1>0
+2. eft coupling inequality for upper bound lowE . y2>0
+3. high energy symmetric representation functional highESymm.y1 with dimensions [[R,J]] (rep, spin)
+4. high energy antisymmetric representation functional highEAnti.y1  with dimensions [[R,J]] (rep, spin)
+5. finite impact parameter functional finiteImpParHighE.y1  with dim [[R]]
+6. high energy symmetric representation functional highESymm.y2  with dimensions [[R,J]] (rep, spin)
+7. high energy antisymmetric representation functional highEAnti.y2  with dimensions [[R,J]] (rep, spin)
+8. finite impact parameter functional finiteImpParHighE.y2 with dim [[R]]
+9. vector y1 giving the lower bound
+10. vector y2 giving the upper bound
+for every eft val rule *)
 calculateBounds[eftVals_,eftRepRule_:{},dispRelHighE_,dispLowE_,CimpEvenR_,CimpOddR_,CimpLowE_,fileFcVals_,integralsFileName_,fwdFileName_,nMax_Integer,Jmax_Integer,nFwdMax_Integer,Mp_,W_,kMax_Integer,d_Integer,xs_,\[Delta]b_,Bmax_,mmax_,polsFileName_,savePolsFile_,boundsFileName_,hasGrav_:True,excludeReps_:{},inclLargeImpPar_:True]:= Module[{highEintsSymm,highEintsAnti,finImpParSymm,finImpParAnti,fwdEqnsLowE,fwdEqnsHighE,CimpLowEintegrals,fwdEqnsHighESymm,fwdEqnsHighEAnti,symmReps,antiReps,colorBasis,finImpParImprDispInts,finImpParFwdEqnsHighE},
 
 symmReps=Flatten@Position[Diagonal[W],_?Positive];
@@ -93,35 +107,7 @@ getBounds[d,xs,\[Delta]b,Bmax,Mp,W,highEintsSymm,highEintsAnti,CimpLowEintegrals
 
 
 (* ::Input:: *)
-(**)
-
-
-(* ::Input:: *)
-(**)
-
-
-(* ::Input:: *)
-(**)
-
-
-(* ::Input:: *)
 (*Get the integrals*)
-
-
-(* ::Input:: *)
-(**)
-
-
-(* ::Input:: *)
-(**)
-
-
-(* ::Input:: *)
-(**)
-
-
-(* ::Input:: *)
-(**)
 
 
 (* ::Input::Initialization:: *)
@@ -148,7 +134,7 @@ finImpParAntiMatrices,
 lowForwardSymmMatrices,
 lowForwardAntiMatrices,
 highForwardSymmMatrices,
-highForwardAntiMatrices,elimC,nullSp,highESymm,highEAnti,finiteImpParHighE,largeImpPar,nnTake},(*
+highForwardAntiMatrices,elimC,nullSp,highESymm,highEAnti,finiteImpParHighE,largeImpPar,nnTake,y1,y2,bounds,bound},(*
 Args: 
  highEintsSymm[[J,nn,R,n_col_b]]  
 highEintsAnti[[J,nn,R,n_col_b]] 
@@ -253,7 +239,16 @@ runsdpbmac["test.xml","test",1024*2];
 y2=Insert[ReadList["test_out/y.txt"][[2;;]],x,Position[Abs[nvec],Max[Abs[nvec]]][[1,1]]]/. a_+b_ e->b*10^a;
 Print[lowE . y2>0/. Solve[nvec . y2==1,x][[1]]/. eftValRule//Simplify];
 (*Print[lowE.y2>0/. Solve[nvec.y2==1,x][[1]]//Simplify];*);
-{lowE . y1>0/. Solve[nvec . y1==-1,x][[1]]//Simplify,lowE . y2>0/. Solve[nvec . y2==1,x][[1]]//Simplify,y1/. Solve[nvec . y1==-1,x][[1]],y2/. Solve[nvec . y2==1,x][[1]]}];
+y1=y1/. Solve[nvec . y1==-1,x][[1]]//Simplify;
+y2=y2/. Solve[nvec . y2==1,x][[1]]//Simplify;
+{lowE . y1>0//Simplify,lowE . y2>0//Simplify,
+highESymm . y1,(*R,J*)
+highEAnti . y1,(*R,J*)
+finiteImpParHighE . y1,(*R*)
+highESymm . y2,(*R,J*)
+highEAnti . y2,(*R,J*)
+finiteImpParHighE . y2,(*R*)
+y1,y2}];
 
 Table[
 (*Print[ToString[StringForm["bounds_u1E_d_``_Jmax_``_dispNumInt_``_analyticInt_G_``_``_reps_higherJ_``_funda.wdx",d,Jmax,dispNumInt, G/.eftVal,StringReplace[ToString[Join[reps1,reps2],InputForm],{"{"|"}"->"",", "->"_"}],higherJ]]];*)
