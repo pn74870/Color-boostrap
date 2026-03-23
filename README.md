@@ -18,14 +18,16 @@ This repository implements the color-improved dispersion-relation workflow used 
   SDPB interface utilities used by the bootstrap workflow.
 - `generalColorJ30m10.wdx`  
   Cached data artifact (example precomputed data).
-
+- `dispersion relations and fwd limit general.nb`    
+The file containing analytic dispersion relation equations.
 ## Physics setup (high-level)
 
 The code uses a twice-subtracted fixed-`t` dispersion relation for
 \[
 \phi^a\phi^b \to \phi^c\phi^d,
 \]
-with explicit color projectors and crossing maps between tensor bases. Compared to the baseline 2102.08951 setup, this project:
+with explicit color projectors and crossing maps between tensor bases.  See `dispersion relations and fwd limit general.nb` .
+Compared to the baseline 2102.08951 setup, this project:
 
 1. keeps full representation-space structure (via matrices such as `M^+`, `W`, and `X=M^+W`),
 2. isolates the improved combination where only the `t`-channel singlet graviton pole survives,
